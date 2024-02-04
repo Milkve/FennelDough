@@ -1,19 +1,20 @@
-# FennelDough
+<div align="center">
 
-FennelDough 是一个基于茴香豆的联网助手，提供了实时信息获取，个性化推荐，在线服务集成，智能问答与解决方案等实用功能，可部署到飞书群。
-
-感谢茴香豆让我们很轻松地就用上了最新的 InternLM2 系列大模型。
-
-**注意：本项目不是茴香豆，以下是茴香豆的 README。**
+<img src="resource/logo_black.svg" width="550px"/>
 
 <div align="center">
-  <img src="resource/logo_blue.svg" width="550px"/>
+  <a href="resource/figures/wechat.jpg" target="_blank">
+    <img alt="Wechat" src="https://img.shields.io/badge/wechat-assistant%20inside-brightgreen?logo=wechat&logoColor=white" />
+  </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
+  <a href="https://pypi.org/project/huixiangdou/" target="_blank">
+    <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  </a>
+</div>
 
-<small> 简体中文 | [English](README.md) </small>
-
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
-[![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
-![CI](https://img.shields.io/github/actions/workflow/status/internlm/huixiangdou/lint.yml?branch=master&style=plastic)
+简体中文 | [English](README.md)
 
 </div>
 
@@ -29,11 +30,11 @@ FennelDough 是一个基于茴香豆的联网助手，提供了实时信息获�
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-|  版本  | GPU显存需求 |                            描述                            |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :--------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 基础版 |    22GB     |            能回答领域知识的基础问题，零成本运行            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |               能够回答源码级问题，零成本运行               | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-| 魔改版 |     4GB     | 用 openai API 替代本地 LLM，处理源码级问题。需要开发能力，运行需要费用 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|  版本  | GPU显存需求 |                         描述                         |                             Linux 系统已验证设备                              |
+| :----: | :---------: | :--------------------------------------------------: | :---------------------------------------------------------------------------: |
+| 基础版 |    22GB     |         能回答领域知识的基础问题，零成本运行         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 高级版 |    40GB     |            能够回答源码级问题，零成本运行            | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+| 魔改版 |     4GB     | 用 openai API 替代本地 LLM，处理源码级问题。限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
 # 🔥 运行
 
@@ -54,7 +55,8 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖，若 python3.11 则需要 `conda install conda-forge::faiss-gpu`
+conda install conda-forge::faiss-gpu # 高版本的 python3.11 需要 `conda`才能安装`faiss`，低版本 python 可跳过这句
+python3 -m pip install -r requirements.txt # 安装依赖
 python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 workdir
 ```
 
@@ -137,11 +139,11 @@ x_api_key = "${YOUR-X-API-KEY}"
   Query: 请教下视频流检测..
   ```
 
-## STEP3.集成到飞书\[可选\]
+## STEP3.集成飞书/个人微信\[可选\]
 
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
-```shell
+```ini
 # config.ini
 ..
 [frontend]
@@ -158,7 +160,9 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-如果还需要从飞书群读取群聊消息，见[飞书开发者广场-添加应用能力-机器人](https://open.feishu.cn/app?lang=zh-CN)。
+- [运行完整的飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
+- [个人微信接入示例](./docs/add_wechat_group_zh.md)
+- 还可以参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 ## STEP4.高级版\[可选\]
 
@@ -174,7 +178,7 @@ python3 -m huixiangdou.main # docker 用户
    对于支持 [openai](https://pypi.org/project/openai/) 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
    以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
 
-   ```shell
+   ```ini
    # config.ini
    [llm]
    enable_local = 1
@@ -191,7 +195,23 @@ python3 -m huixiangdou.main # docker 用户
 
    我们同样支持 chatgpt API。注意此特性会增加响应耗时和运行成本。
 
-3. repo 搜索增强
+   如果你的机器显存不足以运行本地 LLM，也可以开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)，例如：
+
+    ```ini
+    # config.ini
+    [llm]
+    enable_local = 0
+    enable_remote = 1
+    ..
+    [llm.server]
+    ..
+    remote_type = "deepseek"
+    remote_api_key = "YOUR-API-KEY"
+    remote_llm_max_text_length = 16000
+    remote_llm_model = "deepseek-chat"
+    ```
+
+4. repo 搜索增强
 
    此特性适合处理疑难问题，需要基础开发能力调整 prompt。
 
@@ -212,7 +232,7 @@ python3 -m huixiangdou.main # docker 用户
 
    - 编辑 repo 的名字和简介，我们以 opencompass 为例
 
-     ```shell
+     ```ini
      # config.ini
      # add your repo here, we just take opencompass and lmdeploy as example
      [sg_search.opencompass]
@@ -231,7 +251,7 @@ python3 -m huixiangdou.main # docker 用户
 
    运行 `main.py`，茴香豆将在合适的时机，启用搜索增强。
 
-4. 调参
+5. 调参
 
    针对业务场景调参往往不可避免。
 
@@ -241,34 +261,28 @@ python3 -m huixiangdou.main # docker 用户
 
 # 🛠️ FAQ
 
-1. 如何接入其他 IM ？
-
-   - 企业微信。请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)
-   - 个人微信。我们已向微信团队确认暂无 API，[itchat](https://github.com/littlecodersh/ItChat) 或许有帮助（**注意风险**）
-   - 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
-
-2. 机器人太高冷/太嘴碎怎么办？
+1. 机器人太高冷/太嘴碎怎么办？
 
    - 把真实场景中，应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
    - 调整 `repodir` 中的文档，确保不包含场景无关内容
 
    重新执行 `feature_store` 来更新阈值和特征库
 
-3. 启动正常，但运行期间显存 OOM 怎么办？
+2. 启动正常，但运行期间显存 OOM 怎么办？
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-4. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
+3. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
    - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
 
-5. 响应太慢/网络请求总是失败怎么办？
+4. 响应太慢/网络请求总是失败怎么办？
 
    - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
    - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
 
-6. 机器配置低，GPU 显存不足怎么办？
+5. 机器配置低，GPU 显存不足怎么办？
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
@@ -276,7 +290,7 @@ python3 -m huixiangdou.main # docker 用户
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -284,3 +298,7 @@ python3 -m huixiangdou.main # docker 用户
       primaryClass={cs.CL}
 }
 ```
+
+# 🌠 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)

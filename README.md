@@ -1,19 +1,20 @@
-# FennelDough
+<div align="center">
 
-FennelDough is an online assistant based on HuixiangDou. It provides practical functions such as real-time information acquisition, personalized recommendation, online service integration, intelligent question and answer and solution, which can be deployed to Lark or Feishu.
-
-Thanks to HuixiangDou, we can easily use the latest InternLM2 series of LLMs.
-
-**Note: FennelDough is not HuixiangDou, the text below is README of HuixiangDou.**
+<img src="resource/logo_blue.svg" width="550px"/>
 
 <div align="center">
-  <img src="resource/logo_blue.svg" width="550px"/>
+  <a href="resource/figures/wechat.jpg" target="_blank">
+    <img alt="Wechat" src="https://img.shields.io/badge/wechat-assistant%20inside-brightgreen?logo=wechat&logoColor=white" />
+  </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
+  <a href="https://pypi.org/project/huixiangdou/" target="_blank">
+    <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  </a>
+</div>
 
-<small> [简体中文](README_zh.md) | English </small>
-
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
-[![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
-![CI](https://img.shields.io/github/actions/workflow/status/Internlm/huixiangdou/lint.yml?branch=master&style=plastic)
+[简体中文](README_zh.md) | English
 
 </div>
 
@@ -21,9 +22,9 @@ Thanks to HuixiangDou, we can easily use the latest InternLM2 series of LLMs.
 
 1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.
 2. Propose an algorithm pipeline for answering technical questions.
-3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see our [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
+3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md), and join our [WeChat group](./resource/figures/wechat.jpg) to experience the latest version.
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md), and join our [wechat group](./resource/figures/wechat.jpg) to experience the latest version.
 
 # 📦 Hardware Requirements
 
@@ -54,7 +55,8 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Build a feature store
 mkdir workdir # create a working directory
-python3 -m pip install -r requirements.txt # install dependencies, python3.11 needs `conda install conda-forge::faiss-gpu`
+conda install conda-forge::faiss-gpu # python3.11 needs `conda` to install `faiss`
+python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
@@ -77,7 +79,7 @@ reject query: How to make HuixiangDou?
 
 HuixiangDou uses a search engine. Click [Serper](https://serper.dev/api-key) to obtain a quota-limited TOKEN and fill it in `config.ini`.
 
-```shell
+```ini
 # config.ini
 ..
 [web_search]
@@ -117,23 +119,23 @@ The first run will automatically download the configuration of [internlm2-chat-7
 
   Then open a new docker container, configure the host IP (**not** container IP) in `config.ini`, and run `python3 -m huixiangdou.main`
 
-  ```shell
+  ```ini
   # config.ini
   [llm]
   ..
   client_url = "http://10.140.24.142:8888/inference" # example, use your real host IP here
 
-  # run  
+  # run
   python3 -m huixiangdou.main
   ..
   ErrorCode.SUCCESS
   ```
 
-## STEP3. Integrate into Feishu \[Optional\]
+## STEP3. Send to Feishu/Personal Wechat \[Optional\]
 
 Click [Create a Feishu Custom Robot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to get the WEBHOOK_URL callback, and fill it in the config.ini.
 
-```shell
+```ini
 # config.ini
 ..
 [frontend]
@@ -150,7 +152,9 @@ python3 -m huixiangdou.main # for docker users
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-If you still need to read Feishu group messages, see [Feishu Developer Square - Add Application Capabilities - Robots](https://open.feishu.cn/app?lang=zh-CN).
+- [How to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md)
+- Refer to the guide for [Personal Wechat Example](./docs/add_wechat_group_zh.md)
+- You can also check [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 ## STEP4. Advanced Version \[Optional\]
 
@@ -166,7 +170,7 @@ The basic version may not perform well. You can enable these features to enhance
    For LLM services that support the [openai](https://pypi.org/project/openai/) interface, HuixiangDou can utilize its Long Context ability.
    Using [kimi](https://platform.moonshot.cn/) as an example, below is an example of `config.ini` configuration:
 
-   ```shell
+   ```ini
    # config.ini
    [llm]
    enable_local = 1
@@ -183,7 +187,23 @@ The basic version may not perform well. You can enable these features to enhance
 
    We also support chatgpt. Note that this feature will increase response time and operating costs.
 
-3. Repo search enhancement
+   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`, for example:
+   
+   ```ini
+    # config.ini
+    [llm]
+    enable_local = 0
+    enable_remote = 1
+    ..
+    [llm.server]
+    ..
+    remote_type = "deepseek"
+    remote_api_key = "YOUR-API-KEY"
+    remote_llm_max_text_length = 16000
+    remote_llm_model = "deepseek-chat"
+    ```
+
+4. Repo search enhancement
 
    This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
 
@@ -204,7 +224,7 @@ The basic version may not perform well. You can enable these features to enhance
 
    - Edit the name and introduction of the repo, we take opencompass as an example
 
-     ```shell
+     ```ini
      # config.ini
      # add your repo here, we just take opencompass and lmdeploy as example
      [sg_search.opencompass]
@@ -223,7 +243,7 @@ The basic version may not perform well. You can enable these features to enhance
 
    Run `main.py`, HuixiangDou will enable search enhancement when appropriate.
 
-4. Tune Parameters
+5. Tune Parameters
 
    It is often unavoidable to adjust parameters with respect to business scenarios.
 
@@ -233,33 +253,28 @@ The basic version may not perform well. You can enable these features to enhance
 
 # 🛠️ FAQ
 
-1. How to access other IMs?
-
-   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, [itchat](https://github.com/littlecodersh/ItChat) may helps.
-   - DingTalk. Refer to [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
-
-2. What if the robot is too cold/too chatty?
+1. What if the robot is too cold/too chatty?
 
    - Fill in the questions that should be answered in the real scenario into `resource/good_questions.json`, and fill the ones that should be rejected into `resource/bad_questions.json`.
    - Adjust the theme content in `repodir` to ensure that the markdown documents in the main library do not contain irrelevant content.
 
    Re-run `feature_store` to update thresholds and feature libraries.
 
-3. Launch is normal, but out of memory during runtime?
+2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
 
-4. How to access other local LLM / After access, the effect is not ideal?
+3. How to access other local LLM / After access, the effect is not ideal?
 
    - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
    - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
 
-5. What if the response is too slow/request always fails?
+4. What if the response is too slow/request always fails?
 
    - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
    - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
 
-6. What if the GPU memory is too low?
+5. What if the GPU memory is too low?
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
@@ -267,7 +282,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -275,3 +290,7 @@ The basic version may not perform well. You can enable these features to enhance
       primaryClass={cs.CL}
 }
 ```
+
+# 🌠 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)

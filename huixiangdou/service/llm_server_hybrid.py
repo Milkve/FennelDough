@@ -13,6 +13,64 @@ from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
+class InferenceWrapper:
+    """A class to wrapper kinds of inference framework."""
+
+    def __init__(self, model_path: str, local_max_length: int = 8000):
+        """Init model handler."""
+        self.inference = 'huggingface'
+
+        # try:
+        #     import lmdeploy
+        #     from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig  # noqa E501
+        #     self.inference = 'lmdeploy'
+        # except ImportError:
+        #     logger.warning(
+        #         "Warning: auto enable lmdeploy for higher efficiency"  # noqa E501
+        #         "https://github.com/internlm/lmdeploy"
+        #     )
+
+        # if self.inference == 'huggingface':
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path,
+                                                       trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            device_map='auto',
+            torch_dtype='auto').eval()
+
+        # else:
+        # backend_config = TurbomindEngineConfig(rope_scaling_factor=2.0, session_len=local_max_length)  # noqa E501
+        # self.pipe = pipeline(model_path, backend_config=backend_config)
+        # self.gen_config = GenerationConfig(top_p=0.8,
+        #                             top_k=1,
+        #                             temperature=0.8,
+        #                             max_new_tokens=1024)
+
+    def chat(self, prompt: str, history=[]):
+        """Generate a response from local LLM.
+
+        Args:
+            prompt (str): The prompt for inference.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        output_text = ''
+        # if self.inference == 'huggingface':
+        output_text, _ = self.model.chat(self.tokenizer,
+                                         prompt,
+                                         history,
+                                         top_k=1,
+                                         do_sample=False)
+        # elif self.inference == 'lmdeploy':
+        #     output_text = pipe(prompt, gen_config=self.gen_config)
+        # else:
+        #     raise Exception(f'unknown inference framework {self.inference}')
+        return output_text
+
+
 class HybridLLMServer:
     """A class to handle server-side interactions with a hybrid language
     learning model (LLM) service.
@@ -42,19 +100,8 @@ class HybridLLMServer:
 
         model_path = self.server_config['local_llm_path']
 
-        self.tokenizer = None
-        self.model = None
-
         if self.enable_local:
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                model_path, trust_remote_code=True)
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_path,
-                trust_remote_code=True,
-                device_map='auto',
-                torch_dtype='auto',
-                #                fp16=True,
-            ).eval()
+            self.inference = InferenceWrapper(model_path)
         else:
             logger.warning('local LLM disabled.')
 
@@ -122,6 +169,48 @@ class HybridLLMServer:
         res = completion.choices[0].message.content
         return res
 
+    def call_deepseek(self, prompt, history):
+        """Generate a response from deepseek (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://api.deepseek.com/v1',
+        )
+
+        messages = [{
+            'role': 'system',
+            'content': 'You are a helpful assistant'
+        }]
+        for item in history:
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
+
+        life = 0
+        while life < self.retry:
+            try:
+                logger.debug('remote api sending: {}'.format(messages))
+                completion = client.chat.completions.create(
+                    model=self.server_config['remote_llm_model'],
+                    messages=messages,
+                    temperature=0.1,
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(str(e))
+                # retry
+                life += 1
+                randval = random.randint(1, int(pow(2, life)))
+                time.sleep(randval)
+        return ''
+
     def generate_response(self, prompt, history=[], remote=False):
         """Generate a response from the appropriate LLM based on the
         configuration.
@@ -147,6 +236,9 @@ class HybridLLMServer:
             llm_type = self.server_config['remote_type']
             if llm_type == 'kimi':
                 output_text = self.call_kimi(prompt=prompt, history=history)
+            elif llm_type == 'deepseek':
+                output_text = self.call_deepseek(prompt=prompt,
+                                                 history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
@@ -155,12 +247,10 @@ class HybridLLMServer:
             """# Caution: For the results of this software to be reliable and verifiable,  # noqa E501
             it's essential to ensure reproducibility. Thus `GenerationMode.GREEDY_SEARCH`  # noqa E501
             must enabled."""
-            output_text, _ = self.model.chat(self.tokenizer,
-                                             prompt,
-                                             history,
-                                             top_k=1,
-                                             do_sample=False)
-            print((prompt, output_text))
+
+            output_text = self.inference.chat(prompt, history)
+
+            logger.info((prompt, output_text))
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t remote {} timecost {} '.format(
@@ -178,6 +268,10 @@ def parse_args():
         help=  # noqa E251
         'Hybrid LLM Server configuration path. Default value is config.ini'  # noqa E501
     )
+    parser.add_argument('--unittest',
+                        action='store_true',
+                        default=False,
+                        help='Test with samples.')
     args = parser.parse_args()
     return args
 
@@ -205,7 +299,7 @@ def llm_serve(config_path: str, server_ready: Value):
         """Call local llm inference."""
 
         input_json = await request.json()
-        print(input_json)
+        logger.debug(input_json)
 
         prompt = input_json['prompt']
         history = input_json['history']
@@ -223,31 +317,31 @@ def llm_serve(config_path: str, server_ready: Value):
 
 
 def main():
-    """Main function to start the server process and run a sample client
-    request."""
-    args = parse_args()
-    server_ready = Value('i', 0)
-
-    server_process = Process(target=llm_serve,
-                             args=(args.config_path, server_ready))
-    server_process.daemon = True
-    server_process.start()
-
-    from llm_client import ChatClient
-    client = ChatClient(config_path=args.config_path)
-    while server_ready.value == 0:
-        logger.info('waiting for server to be ready..')
-        time.sleep(3)
-    print(client.generate_response(prompt='今天天气如何？', history=[], remote=False))
-
-
-def simple_bind():
     """Function to start the server without running a separate process."""
     args = parse_args()
     server_ready = Value('i', 0)
 
-    llm_serve(args.config_path, server_ready)
+    if not args.unittest:
+        llm_serve(args.config_path, server_ready)
+    else:
+        server_process = Process(target=llm_serve,
+                                 args=(args.config_path, server_ready))
+        server_process.daemon = True
+        server_process.start()
+
+        from .llm_client import ChatClient
+        client = ChatClient(config_path=args.config_path)
+        while server_ready.value == 0:
+            logger.info('waiting for server to be ready..')
+            time.sleep(3)
+
+        queries = ['今天天气如何？']
+        for query in queries:
+            print(
+                client.generate_response(prompt=query,
+                                         history=[],
+                                         remote=False))
 
 
 if __name__ == '__main__':
-    simple_bind()
+    main()
